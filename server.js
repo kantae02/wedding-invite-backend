@@ -56,7 +56,6 @@
 //   console.log(`Server is running on port ${PORT}`);
 // });
 
-
 const express = require('express');
 const multer = require('multer');
 const { google } = require('googleapis');
@@ -67,8 +66,27 @@ const app = express();
 app.use(cors());
 const upload = multer();
 
+let credentials;
+try {
+  credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  if (credentials.private_key) {
+    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+  }
+} catch (error) {
+  console.error('Error parsing Google credentials:', error);
+  process.exit(1);
+}
+
+console.log('Credentials loaded:', {
+  type: credentials.type,
+  project_id: credentials.project_id,
+  private_key_id: credentials.private_key_id,
+  client_email: credentials.client_email,
+  private_key_length: credentials.private_key ? credentials.private_key.length : 'undefined'
+});
+
 const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+  credentials: credentials,
   scopes: ['https://www.googleapis.com/auth/drive.file'],
 });
 
