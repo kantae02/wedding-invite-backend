@@ -51,10 +51,12 @@
 //     }
 //   });
 
-// const PORT = process.env.PORT || 3000;
+// const PORT = process.env.PORT || 3001;
 // app.listen(PORT, () => {
 //   console.log(`Server is running on port ${PORT}`);
 // });
+
+
 
 const express = require('express');
 const multer = require('multer');
@@ -66,29 +68,25 @@ const app = express();
 app.use(cors());
 const upload = multer();
 
-let credentials;
-try {
-  credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
-  if (credentials.private_key) {
-    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-  }
-} catch (error) {
-  console.error('Error parsing Google credentials:', error);
-  process.exit(1);
+// Google Drive setup
+let auth;
+
+if (process.env.NODE_ENV === 'production') {
+  // For production (Render deployment)
+  const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  auth = new google.auth.GoogleAuth({
+    credentials: credentials,
+    scopes: ['https://www.googleapis.com/auth/drive.file'],
+  });
+} else {
+  // For local development
+  const path = require('path');
+  const KEYFILEPATH = path.join(__dirname, 'credentials.json');
+  auth = new google.auth.GoogleAuth({
+    keyFile: KEYFILEPATH,
+    scopes: ['https://www.googleapis.com/auth/drive.file'],
+  });
 }
-
-console.log('Credentials loaded:', {
-  type: credentials.type,
-  project_id: credentials.project_id,
-  private_key_id: credentials.private_key_id,
-  client_email: credentials.client_email,
-  private_key_length: credentials.private_key ? credentials.private_key.length : 'undefined'
-});
-
-const auth = new google.auth.GoogleAuth({
-  credentials: credentials,
-  scopes: ['https://www.googleapis.com/auth/drive.file'],
-});
 
 const driveService = google.drive({ version: 'v3', auth });
 
@@ -105,7 +103,7 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
       },
       requestBody: {
         name: file.originalname,
-        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
+        parents: [process.env.GOOGLE_DRIVE_FOLDER_ID], // Use environment variable
       },
       fields: 'id,name,webViewLink',
     });
@@ -123,7 +121,7 @@ app.post('/upload', upload.single('photo'), async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
