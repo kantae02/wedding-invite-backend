@@ -70,22 +70,10 @@ app.use(cors());
 const upload = multer();
 
 // Google Drive setup
-let auth;
-
-if (process.env.NODE_ENV === 'production') {
-  const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS);
-  auth = new google.auth.GoogleAuth({
-    credentials: credentials,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  });
-} else {
-  const path = require('path');
-  const KEYFILEPATH = path.join(__dirname, 'credentials.json');
-  auth = new google.auth.GoogleAuth({
-    keyFile: KEYFILEPATH,
-    scopes: ['https://www.googleapis.com/auth/drive.file'],
-  });
-}
+const auth = new google.auth.GoogleAuth({
+  credentials: JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS),
+  scopes: ['https://www.googleapis.com/auth/drive.file'],
+});
 
 const driveService = google.drive({ version: 'v3', auth });
 
